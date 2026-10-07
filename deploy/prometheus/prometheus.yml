@@ -1,0 +1,12 @@
+# Prometheus scrape config for the FleetPulse local stack.
+# NOT run/verified as part of this scaffold.
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "fleetpulse-server"
+    static_configs:
+      - targets: ["server:8080"]
+        labels:
+          service: "fleetpulse-server"

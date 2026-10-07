@@ -1,0 +1,112 @@
+# FleetPulse local stack.
+#
+# IMPORTANT: this compose file has been authored but NOT run as part of this
+# scaffold -- `docker compose up` has not been executed, no image has been
+# pulled, and no service here has been verified to actually start
+# successfully. Treat it as a structured starting point, not a tested
+# environment. See README.md for the order of commands that WOULD be run to
+# stand this up.
+#
+# Services:
+#   - server:      ingestion + worker pool + /metrics (cmd/server)
+#   - simulator:   fake fleet client generator (cmd/simulator)
+#   - downstream:  Workflow Mapping stub dependency (cmd/downstream)
+#   - localstack:  local AWS emulator for the SQS/DynamoDB-backed pipeline
+#   - prometheus:  scrapes server:8080/metrics
+#   - grafana:     dashboards over the Prometheus datasource
+
+version: "3.9"
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "8080:8080"
+    environment:
+      FLEETPULSE_ADDR: ":8080"
+      FLEETPULSE_DOWNSTREAM_URL: "http://downstream:8090"
+      # Flip these two (plus the vars below) to exercise the LocalStack path
+      # instead of the default in-process queue/state implementations.
+      FLEETPULSE_QUEUE_BACKEND: "memory"
+      FLEETPULSE_STATE_BACKEND: "memory"
+      # FLEETPULSE_QUEUE_BACKEND: "sqs"
+      # FLEETPULSE_STATE_BACKEND: "dynamodb"
+      # FLEETPULSE_SQS_QUEUE_URL: "http://localstack:4566/000000000000/fleetpulse-events"
+      # FLEETPULSE_DYNAMODB_TABLE: "fleetpulse-client-state"
+      # AWS_ENDPOINT_URL: "http://localstack:4566"
+      # AWS_REGION: "us-east-1"
+      # AWS_ACCESS_KEY_ID: "test"
+      # AWS_SECRET_ACCESS_KEY: "test"
+    depends_on:
+      - downstream
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.simulator
+    environment:
+      FLEETPULSE_SIM_CLIENTS: "300"
+      FLEETPULSE_SIM_INGEST_URL: "http://server:8080/v1/events"
+      FLEETPULSE_SIM_INTERVAL: "30s"
+      # Demo hook: uncomment to make the beta cohort go silent 2 minutes in.
+      # FLEETPULSE_SIM_KILL_COHORT: "2.6.0-beta"
+      # FLEETPULSE_SIM_KILL_COHORT_AFTER: "2m"
+    depends_on:
+      - server
+
+  downstream:
+    build:
+      context: .
+      dockerfile: Dockerfile.downstream
+    ports:
+      - "8090:8090"
+    environment:
+      FLEETPULSE_DOWNSTREAM_ADDR: ":8090"
+
+  localstack:
+    image: localstack/localstack:3
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: "sqs,dynamodb"
+      DEBUG: "0"
+      PERSISTENCE: "0"
+    volumes:
+      - "localstack-data:/var/lib/localstack"
+    # NOTE: no bootstrap script is wired up here to create the
+    # fleetpulse-events queue / fleetpulse-client-state table automatically.
+    # docs/architecture.md documents the `awslocal` commands that would do
+    # this; running them against this container has not been done as part
+    # of this scaffold.
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - "./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+    depends_on:
+      - server
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+    volumes:
+      - "./deploy/grafana/provisioning:/etc/grafana/provisioning:ro"
+    depends_on:
+      - prometheus
+
+volumes:
+  localstack-data:

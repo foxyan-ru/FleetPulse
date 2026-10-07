@@ -1,0 +1,76 @@
+{
+  "title": "FleetPulse Overview",
+  "uid": "fleetpulse-overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Heartbeat freshness by version (the silent-cohort demo panel)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "fleetpulse_heartbeat_freshness_ratio",
+          "legendFormat": "{{version}} / {{os}} / {{region}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } }
+    },
+    {
+      "id": 2,
+      "title": "Capture completeness by version",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "fleetpulse_capture_completeness_ratio",
+          "legendFormat": "{{version}} / {{os}} / {{region}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } }
+    },
+    {
+      "id": 3,
+      "title": "Mapping availability (downstream dependency)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "fleetpulse_mapping_availability_ratio", "legendFormat": "mapping availability" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } }
+    },
+    {
+      "id": 4,
+      "title": "Queue backlog / in-flight / dead-lettered",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "fleetpulse_queue_backlog", "legendFormat": "backlog" },
+        { "expr": "fleetpulse_queue_in_flight", "legendFormat": "in-flight" },
+        { "expr": "fleetpulse_queue_dead_lettered_total", "legendFormat": "dead-lettered" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Ingest accepted vs rejected (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "sum(rate(fleetpulse_ingest_events_accepted_total[1m])) by (type)", "legendFormat": "accepted:{{type}}" },
+        { "expr": "sum(rate(fleetpulse_ingest_events_rejected_total[1m])) by (reason)", "legendFormat": "rejected:{{reason}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Worker processing outcomes (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "sum(rate(fleetpulse_worker_events_processed_total[1m])) by (type, outcome)", "legendFormat": "{{type}}:{{outcome}}" }
+      ]
+    }
+  ]
+}

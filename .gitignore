@@ -1,0 +1,36 @@
+# Build artifacts
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go tooling
+/vendor/
+go.sum
+
+# Environment / local overrides
+.env
+.env.*
+!.env.example
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# LocalStack / docker-compose volumes
+.localstack/
+docker/volumes/
+
+# Logs
+*.log

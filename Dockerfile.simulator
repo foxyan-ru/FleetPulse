@@ -1,0 +1,10 @@
+# Builds cmd/simulator. NOT built or run as part of this scaffold.
+FROM golang:1.24 AS build
+WORKDIR /src
+COPY go.mod ./
+COPY . .
+RUN go mod tidy && CGO_ENABLED=0 go build -o /out/simulator ./cmd/simulator
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=build /out/simulator /simulator
+ENTRYPOINT ["/simulator"]

@@ -1,0 +1,13 @@
+# Builds cmd/server. NOT built or run as part of this scaffold -- see
+# README.md's "nothing here has been executed" note. `go mod tidy` has not
+# been run either, so a real build will need that first (see go.mod).
+FROM golang:1.24 AS build
+WORKDIR /src
+COPY go.mod ./
+COPY . .
+RUN go mod tidy && CGO_ENABLED=0 go build -o /out/server ./cmd/server
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=build /out/server /server
+EXPOSE 8080
+ENTRYPOINT ["/server"]

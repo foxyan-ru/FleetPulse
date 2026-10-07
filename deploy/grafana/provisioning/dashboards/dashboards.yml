@@ -1,0 +1,13 @@
+# Auto-provisions the FleetPulse dashboard below. NOT run/verified as part
+# of this scaffold.
+apiVersion: 1
+
+providers:
+  - name: fleetpulse
+    orgId: 1
+    folder: FleetPulse
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
